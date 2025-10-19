@@ -1,6 +1,7 @@
 package ru.yandex.blog_app.service.impl;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,16 @@ public class CommentServiceImpl implements CommentService {
         return comment;
     }
 
+    @Override
+    public void deleteByIdAndPostId(Long commentId, Long postId) {
+        commentDao.deleteByIdAndPostId(commentId, postId);
+    }
+
+    @Override
+    public Map<Long, Long> commentsCount(List<Long> postIds) {
+        return commentsCount(postIds);
+    }
+
     private void validateOnCreate(Long postId, Comment comment) {
         if (!comment.getPostId().equals(postId)) {
             throw new ApiServiceException(HttpStatus.BAD_REQUEST, "Не совпадают идентификаторы поста в теле и в пути");
@@ -61,10 +72,5 @@ public class CommentServiceImpl implements CommentService {
         if (!comment.getId().equals(commentId)) {
             throw new ApiServiceException(HttpStatus.BAD_REQUEST, "Не совпадают идентификаторы комментария в теле и в пути");
         }
-    }
-
-    @Override
-    public void deleteByIdAndPostId(Long commentId, Long postId) {
-        commentDao.deleteByIdAndPostId(commentId, postId);
     }
 }

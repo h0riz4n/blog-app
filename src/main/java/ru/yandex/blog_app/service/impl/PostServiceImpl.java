@@ -1,9 +1,12 @@
 package ru.yandex.blog_app.service.impl;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import ru.yandex.blog_app.exception.ApiServiceException;
 import ru.yandex.blog_app.model.domain.Post;
 import ru.yandex.blog_app.model.domain.Tag;
 import ru.yandex.blog_app.model.dto.Page;
+import ru.yandex.blog_app.service.CommentService;
 import ru.yandex.blog_app.service.FileService;
 import ru.yandex.blog_app.service.PostService;
 import ru.yandex.blog_app.service.TagService;
@@ -24,6 +28,7 @@ import ru.yandex.blog_app.service.TagService;
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
+    private final CommentService commentService;
     private final TagService tagService;
     private final FileService fileService;
 
@@ -40,12 +45,21 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Post> getAll(String search, Integer pageNumber, Integer pageSize) {
-        Page<Post> pageOfPosts = postDao.findAll(search, pageNumber, pageSize);
+        List<String> words = Arrays.stream(search.split(" "))
+            .filter(Predicate.not(String::isBlank))
+            .toList();
+
+        Page<Post> pageOfPosts = postDao.findAll(getTitleSearch(words), getTags(words), pageNumber, pageSize);
+        List<Long> postIds = pageOfPosts.getPosts().stream().map(Post::getId).toList();
+
+        Map<Long, Long> commentsCount = commentService.commentsCount(postIds);
         Map<Long, List<Tag>> tagsMap = tagService.getAllByPostIds(pageOfPosts.getPosts().stream().map(Post::getId).toList());
+
         pageOfPosts.getPosts().forEach(post -> {
-            List<Tag> tags = tagsMap.getOrDefault(post.getId(), Collections.emptyList());
-            post.setTags(tags);
+            post.setTags(tagsMap.getOrDefault(post.getId(), Collections.emptyList()));
+            post.setCommentsCount(commentsCount.getOrDefault(post.getId(), 0L));
         });
+
         return pageOfPosts;
     }
     
@@ -100,6 +114,19 @@ public class PostServiceImpl implements PostService {
         } catch (IOException ex) {
             throw new ApiServiceException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
+    }
+
+    private List<String> getTags(List<String> words) {
+        return words.stream()
+            .filter(txt -> txt.startsWith("#"))
+            .map(txt -> txt.substring(1))
+            .toList();
+    } 
+
+    private String getTitleSearch(List<String> words) {
+        return words.stream()
+            .filter(txt -> !txt.startsWith("#"))
+            .collect(Collectors.joining(" "));
     }
 
     private void validateOnUpdate(Long id, Post post) {

@@ -31,7 +31,6 @@ import ru.yandex.blog_app.model.view.CommentView;
 @SpringJUnitConfig(classes = {
     WebConfiguration.class,
     DatabaseConfiguration.class
-
 })
 @WebAppConfiguration
 @TestPropertySource(locations = "classpath:test-application.properties")

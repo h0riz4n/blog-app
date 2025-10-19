@@ -89,11 +89,11 @@ public class PostServiceTest {
             .tags(Collections.emptyList())
             .build();
 
-        String search = "test";
+        String search = "test #tag1";
         Integer pageNumber = 0;
         Integer pageSize = 1;
 
-        when(postDao.findAll(search, pageNumber, pageSize))
+        when(postDao.findAll(search, List.of("tag1"), pageNumber, pageSize))
             .thenReturn(
                 Page.<Post>builder()
                     .hasNext(true)

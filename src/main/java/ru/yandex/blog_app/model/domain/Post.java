@@ -6,9 +6,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,17 +24,13 @@ public class Post implements Serializable {
 
     private Long id;
 
-    @NotBlank
     private String title;
 
-    @NotBlank
     private String text;
 
     @Default
-    @NotNull
     private Long likesCount = 0L;
 
-    @NotEmpty
     @Default
     private List<Tag> tags = new ArrayList<>();
 

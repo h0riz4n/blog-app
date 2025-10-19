@@ -21,6 +21,7 @@ import ru.yandex.blog_app.model.dto.PostDto;
 )
 public interface PostMapper {
 
+    @Mapping(target = "fileName", ignore = true)
     @Mapping(target = "tags", source = "tags", qualifiedByName = "toTags")
     Post toEntity(PostDto dto);
 

@@ -9,7 +9,7 @@
   <packaging>war</packaging>
 
   <name>blog-app Maven Webapp</name>
-  <url>http://www.example.com</url>
+  <description>Приложение Blog APP с Rest API</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,8 +18,25 @@
     <java.version>21</java.version>
     <postgresql.version>42.7.2</postgresql.version>
     <mapstruct.version>1.6.2</mapstruct.version>
-    <jackson.version.annotations>2.17.2</jackson.version.annotations>
+    <jackson.version>2.17.2</jackson.version>
+    <junit.version>5.9.3</junit.version>
+    <mockito.version>5.11.0</mockito.version>
+    <spring.version>6.2.1</spring.version>
+    <cassandra.version>4.1.9</cassandra.version>
+    <lombok.version>1.18.30</lombok.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -39,29 +56,15 @@
     </dependency>
 
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.11.2</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-params</artifactId>
-        <version>5.11.2</version>
-        <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.30</version>
+      <version>${lombok.version}</version>
     </dependency>
 
     <dependency>
         <groupId>org.mapstruct</groupId>
         <artifactId>mapstruct</artifactId>
-        <version>1.6.3</version>
+        <version>${mapstruct.version}</version>
     </dependency>
 
     <dependency>
@@ -87,27 +90,34 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
-      <version>5.14.2</version>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-webmvc</artifactId>
-        <version>6.2.1</version>
+        <version>${spring.version}</version>
     </dependency>
 
     <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.11.2</version>
+        <version>${junit.version}</version>
         <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-test</artifactId>
-        <version>6.2.1</version>
+        <version>${spring.version}</version>
         <scope>test</scope>
     </dependency>
 
@@ -147,18 +157,23 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.17.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>2.2</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.17.2</version>
     </dependency>
   </dependencies>
 
   <build>
-    <finalName>ROOT</finalName>
+    <finalName>blog-app</finalName>
     <plugins>
 
       <plugin>
@@ -200,7 +215,7 @@
                 <path>
                   <groupId>org.projectlombok</groupId>
                   <artifactId>lombok</artifactId>
-                  <version>1.18.30</version>
+                  <version>${lombok.version}</version>
                 </path>
 
                 <path>

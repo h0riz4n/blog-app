@@ -4,27 +4,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
+import lombok.Setter;
 import ru.yandex.blog_app.dao.TagDao;
 import ru.yandex.blog_app.model.domain.Tag;
 
 @Repository
 public class JdbcTagDao implements TagDao {
 
-    private final String SCHEMA_NAME = "blog_app";
     private final String TABLE_NAME = "tag";
     private final String ID_COLUMN = "id";
 
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public JdbcTagDao(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+    public JdbcTagDao(
+        @Value("${blog-app.default-schema-name}") String schemaName,
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate
+    ) {
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.simpleJdbcInsert = new SimpleJdbcInsert(namedParameterJdbcTemplate.getJdbcTemplate())
-            .withSchemaName(SCHEMA_NAME)
+            .withSchemaName(schemaName)
             .withTableName(TABLE_NAME)
             .usingGeneratedKeyColumns(ID_COLUMN);
     }

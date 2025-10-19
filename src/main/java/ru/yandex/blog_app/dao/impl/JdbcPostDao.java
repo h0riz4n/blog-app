@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -22,17 +23,19 @@ import ru.yandex.blog_app.model.dto.Page;
 @Repository
 public class JdbcPostDao implements PostDao {
 
-    private final String SCHEMA_NAME = "blog_app";
     private final String TABLE_NAME = "post";
     private final String ID_COLUMN = "id";
     
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public JdbcPostDao(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+    public JdbcPostDao(
+        @Value("${blog-app.default-schema-name}") String schemaName,
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate
+    ) {
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.simpleJdbcInsert = new SimpleJdbcInsert(namedParameterJdbcTemplate.getJdbcTemplate())
-            .withSchemaName(SCHEMA_NAME)
+            .withSchemaName(schemaName)
             .withTableName(TABLE_NAME)
             .usingGeneratedKeyColumns(ID_COLUMN);
     }
@@ -49,37 +52,37 @@ public class JdbcPostDao implements PostDao {
     }
     
     @Override
-    public Page<Post> findAll(String search, Integer pageNumber, Integer pageSize) {
+    public Page<Post> findAll(String title, List<String> tagsText, Integer pageNumber, Integer pageSize) {
         final String SELECT_QUERY = """
-            SELECT 
-                p.*,
-                COUNT(c.id) AS comments_count
+            SELECT p.id, p.title, p.text, p.likes_count
             FROM blog_app.post p
-            LEFT JOIN blog_app.comment c
-            ON p.id = c.post_id
-            WHERE p.title LIKE CONCAT('%', :search, '%')
+            LEFT JOIN blog_app.tag t
+            ON p.id = t.post_id
+            WHERE p.title LIKE CONCAT('%', :title, '%')
             GROUP BY p.id
-            ORDER BY p.id
+            HAVING COUNT(DISTINCT CASE WHEN t.text IN (:tags) THEN t.text END) = :tagCount
             LIMIT :limit
             OFFSET :offset
             """;
 
-        final String COUNT_QUERY = """
-            SELECT COUNT(p.id)
-            FROM blog_app.post p 
-            WHERE p.title LIKE CONCAT('%', :search, '%')
-            """;
-
         var parameters = Map.of(
-            "search", search,
+            "title", title,
+            "tagCount", tagsText.size(),
+            "tags", tagsText,
             "limit", pageSize,
             "offset", pageNumber * pageSize
         );
 
-        List<Post> posts = namedParameterJdbcTemplate.query(SELECT_QUERY, parameters, (rs, rn) -> getPost(rs));
-        long totalPosts = namedParameterJdbcTemplate.queryForObject(COUNT_QUERY, Map.of("search", search), Long.class);
-        
-        long totalPages = (totalPosts + pageSize - 1) / pageSize;
+        List<Post> posts = namedParameterJdbcTemplate.query(SELECT_QUERY, parameters, (rs, rn) -> {
+            return Post.builder()
+                .id(rs.getLong("id"))
+                .title(rs.getString("title"))
+                .text(rs.getString("text"))
+                .likesCount(rs.getLong("likes_count"))
+                .build();
+        });  
+      
+        long totalPages = (countAll(title, tagsText) + pageSize - 1) / pageSize;
         long lastPage = totalPages == 0 ? 0 : totalPages - 1;
 
         return Page.<Post>builder()
@@ -120,10 +123,10 @@ public class JdbcPostDao implements PostDao {
     public void deleteById(Long id) {
         final String DELETE_QUERY = """
             DELETE FROM blog_app.post
-            WHERE id = ?
+            WHERE id = :id
             """;
 
-        namedParameterJdbcTemplate.getJdbcTemplate().update(DELETE_QUERY, id);
+        namedParameterJdbcTemplate.update(DELETE_QUERY, Map.of("id", id));
     }
 
     @Override
@@ -171,6 +174,7 @@ public class JdbcPostDao implements PostDao {
             "fileName", fileName,
             "id", id
         );
+
         namedParameterJdbcTemplate.update(UPDATE_QUERY, parameters);
     }
 
@@ -187,6 +191,26 @@ public class JdbcPostDao implements PostDao {
         } catch (DataAccessException ex) {
             return Optional.empty();
         }
+    }
+
+    private Long countAll(String title, List<String> tagsText) {
+        final String COUNT_QUERY = """
+            SELECT COUNT(p.id)
+            FROM blog_app.post p
+            LEFT JOIN blog_app.tag t
+            ON p.id = t.post_id
+            WHERE p.title LIKE CONCAT('%', :title, '%')
+            GROUP BY p.id
+            HAVING (:tagCount = 0 or COUNT(DISTINCT CASE WHEN t.text IN (:tags) THEN t.text END) = :tagCount)
+            """;
+
+        var parameters = Map.of(
+            "title", title,
+            "tagCount", tagsText.size(),
+            "tags", tagsText
+        );
+
+        return namedParameterJdbcTemplate.queryForObject(COUNT_QUERY, parameters, Long.class);
     }
 
     private Post extractPost(ResultSet resultSet) throws SQLException {

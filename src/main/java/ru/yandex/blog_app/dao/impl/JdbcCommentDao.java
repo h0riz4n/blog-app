@@ -2,10 +2,13 @@ package ru.yandex.blog_app.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -13,21 +16,24 @@ import org.springframework.stereotype.Repository;
 
 import ru.yandex.blog_app.dao.CommentDao;
 import ru.yandex.blog_app.model.domain.Comment;
+import ru.yandex.blog_app.model.domain.Tag;
 
 @Repository
 public class JdbcCommentDao implements CommentDao {
 
-    private final String SCHEMA_NAME = "blog_app";
     private final String TABLE_NAME = "comment";
     private final String ID_COLUMN = "id";
     
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public JdbcCommentDao(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+    public JdbcCommentDao(
+        @Value("${blog-app.default-schema-name}") String schemaName,
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate
+    ) {
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.simpleJdbcInsert = new SimpleJdbcInsert(namedParameterJdbcTemplate.getJdbcTemplate())
-            .withSchemaName(SCHEMA_NAME)
+            .withSchemaName(schemaName)
             .withTableName(TABLE_NAME)
             .usingGeneratedKeyColumns(ID_COLUMN);
     }
@@ -80,11 +86,55 @@ public class JdbcCommentDao implements CommentDao {
     public void updateText(Long id, String text) {
         final String UPDATE_QUERY = """
             UPDATE blog_app.comment
-            SET text = ?
-            WHERE id = ?    
+            SET text = :text
+            WHERE id = :id    
             """;
 
-        namedParameterJdbcTemplate.getJdbcTemplate().update(UPDATE_QUERY, text, id);
+        var parameters = Map.of(
+            "text", text,
+            "id", id
+        );
+
+        namedParameterJdbcTemplate.update(UPDATE_QUERY, parameters);
+    }
+
+    
+    @Override
+    public void deleteByIdAndPostId(Long id, Long postId) {
+        final String DELETE_QUERY = """
+            DELETE FROM blog_app.comment
+            WHERE id = :id
+            AND post_id = :postId
+            """;
+
+        var parameters = Map.of(
+            "id", id,
+            "postId", postId
+        );
+
+        namedParameterJdbcTemplate.update(DELETE_QUERY, parameters);
+    }
+
+    @Override
+    public Map<Long, Long> countAllByPostIds(List<Long> postIds) {
+         if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+
+        final String SELECT_QUERY = """
+            SELECT c.post_id, COUNT(c.id) AS comments_count
+            FROM blog_app.comment c 
+            WHERE c.post_id IN (:postIds)
+            GROUP BY c.post_id
+            """;
+
+        return namedParameterJdbcTemplate.query(SELECT_QUERY, Map.of("postIds", postIds), rs -> {
+            Map<Long, Long> result = new HashMap<>();
+            while (rs.next()) {
+                result.put(rs.getLong("post_id"), rs.getLong("comments_count"));
+            }
+            return result;
+        });
     }
 
     private Comment extract(ResultSet resultSet) throws SQLException {
@@ -93,16 +143,5 @@ public class JdbcCommentDao implements CommentDao {
             .postId(resultSet.getLong("post_id"))
             .text(resultSet.getString("text"))
             .build();
-    }
-
-    @Override
-    public void deleteByIdAndPostId(Long id, Long postId) {
-        final String DELETE_QUERY = """
-            DELETE FROM blog_app.comment
-            WHERE id = ?
-            AND post_id = ?    
-            """;
-
-        namedParameterJdbcTemplate.getJdbcTemplate().update(DELETE_QUERY, id, postId);
     }
 }

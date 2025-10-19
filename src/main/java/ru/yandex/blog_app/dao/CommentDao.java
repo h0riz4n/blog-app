@@ -1,6 +1,7 @@
 package ru.yandex.blog_app.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import ru.yandex.blog_app.model.domain.Comment;
@@ -16,4 +17,6 @@ public interface CommentDao {
     void updateText(Long id, String text);
 
     void deleteByIdAndPostId(Long id, Long postId);
+
+    Map<Long, Long> countAllByPostIds(List<Long> postIds);
 }

@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Repository;
 
 import ru.yandex.blog_app.dao.CommentDao;
 import ru.yandex.blog_app.model.domain.Comment;
-import ru.yandex.blog_app.model.domain.Tag;
 
 @Repository
 public class JdbcCommentDao implements CommentDao {

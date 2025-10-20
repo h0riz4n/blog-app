@@ -9,7 +9,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
-import lombok.Setter;
 import ru.yandex.blog_app.dao.TagDao;
 import ru.yandex.blog_app.model.domain.Tag;
 

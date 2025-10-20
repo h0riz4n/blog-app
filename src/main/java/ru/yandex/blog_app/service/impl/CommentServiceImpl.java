@@ -55,7 +55,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public Map<Long, Long> commentsCount(List<Long> postIds) {
-        return commentsCount(postIds);
+        return commentDao.countAllByPostIds(postIds);
     }
 
     private void validateOnCreate(Long postId, Comment comment) {

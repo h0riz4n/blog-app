@@ -33,6 +33,9 @@ public class PostServiceTest {
     private FileService fileService;
 
     @Mock
+    private CommentService commentService;
+
+    @Mock
     private TagService tagService;
 
     @Mock
@@ -93,7 +96,7 @@ public class PostServiceTest {
         Integer pageNumber = 0;
         Integer pageSize = 1;
 
-        when(postDao.findAll(search, List.of("tag1"), pageNumber, pageSize))
+        when(postDao.findAll("test", List.of("tag1"), pageNumber, pageSize))
             .thenReturn(
                 Page.<Post>builder()
                     .hasNext(true)
@@ -105,6 +108,9 @@ public class PostServiceTest {
 
         when(tagService.getAllByPostIds(List.of(1L)))
             .thenReturn(Map.of(1L, List.of(mockTag)));
+
+        when(commentService.commentsCount(List.of(1L)))
+            .thenReturn(Map.of(0L, 0L));
 
         Page<Post> posts = postService.getAll(search, pageNumber, pageSize);
 

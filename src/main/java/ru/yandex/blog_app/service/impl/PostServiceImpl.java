@@ -52,12 +52,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> pageOfPosts = postDao.findAll(getTitleSearch(words), getTags(words), pageNumber, pageSize);
         List<Long> postIds = pageOfPosts.getPosts().stream().map(Post::getId).toList();
 
-        Map<Long, Long> commentsCount = commentService.commentsCount(postIds);
-        Map<Long, List<Tag>> tagsMap = tagService.getAllByPostIds(pageOfPosts.getPosts().stream().map(Post::getId).toList());
+        Map<Long, Long> commentsCountMap = commentService.commentsCount(postIds);
+        Map<Long, List<Tag>> tagsMap = tagService.getAllByPostIds(postIds);
 
         pageOfPosts.getPosts().forEach(post -> {
             post.setTags(tagsMap.getOrDefault(post.getId(), Collections.emptyList()));
-            post.setCommentsCount(commentsCount.getOrDefault(post.getId(), 0L));
+            post.setCommentsCount(commentsCountMap.getOrDefault(post.getId(), 0L));
         });
 
         return pageOfPosts;

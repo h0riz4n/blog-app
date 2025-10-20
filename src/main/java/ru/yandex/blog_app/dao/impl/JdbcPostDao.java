@@ -195,13 +195,15 @@ public class JdbcPostDao implements PostDao {
 
     private Long countAll(String title, List<String> tagsText) {
         final String COUNT_QUERY = """
-            SELECT COUNT(p.id)
-            FROM blog_app.post p
-            LEFT JOIN blog_app.tag t
-            ON p.id = t.post_id
-            WHERE p.title LIKE CONCAT('%', :title, '%')
-            GROUP BY p.id
-            HAVING (:tagCount = 0 or COUNT(DISTINCT CASE WHEN t.text IN (:tags) THEN t.text END) = :tagCount)
+            SELECT COUNT(*) FROM (
+                SELECT p.id
+                FROM blog_app.post p
+                LEFT JOIN blog_app.tag t
+                ON p.id = t.post_id
+                WHERE p.title LIKE CONCAT('%', :title, '%')
+                GROUP BY p.id
+                HAVING (:tagCount = 0 or COUNT(DISTINCT CASE WHEN t.text IN (:tags) THEN t.text END) = :tagCount)
+            ) AS subquery
             """;
 
         var parameters = Map.of(

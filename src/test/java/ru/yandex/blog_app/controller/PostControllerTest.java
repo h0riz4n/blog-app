@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringJUnitConfig(classes = {
     WebConfiguration.class,
     DatabaseConfiguration.class
-
 })
 @WebAppConfiguration
 @TestPropertySource(locations = "classpath:test-application.properties")
@@ -113,7 +112,7 @@ public class PostControllerTest {
     @Test
     public void getAll() throws Exception {
         var mockRequest = get("/api/posts")
-            .param("search", "пост")
+            .param("search", "пост #тег1")
             .param("pageNumber", "0")
             .param("pageSize", "2");
         

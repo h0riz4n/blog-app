@@ -2,6 +2,7 @@ package ru.yandex.blog_app.dao;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -77,8 +78,8 @@ public class PostDaoTest {
             .build();
 
         postDao.save(mockPost);
-        Page<Post> posts = postDao.findAll("title", List.of("tag1"), 0, 10);
-        Post savedPost = postDao.save(mockPost);
+        var posts = postDao.findAll("title", Collections.emptyList(), 0, 10);
+        Post savedPost = posts.getPosts().get(0);
 
         // assertNotNull(savedPost);
         assertEquals("text", savedPost.getText());
@@ -92,15 +93,11 @@ public class PostDaoTest {
                 .id(1L)
                 .title("Первый пост")
                 .text("Текст первого поста")
-                .commentsCount(2L)
-                .tags(List.of(Tag.builder().id(1L).postId(1L).text("тег1").build()))
                 .build(),
             Post.builder()
                 .id(2L)
                 .title("Второй пост")
                 .text("Текст второго поста")
-                .commentsCount(2L)
-                .tags(List.of(Tag.builder().id(1L).postId(2L).text("тег2").build()))
                 .build()
         );
 
@@ -111,8 +108,9 @@ public class PostDaoTest {
             .lastPage(0L)
             .build();
 
-        var actualPage = postDao.findAll("", List.of(), 0, 5);
+        var actualPage = postDao.findAll("пост", Collections.emptyList(), 0, 10);
 
+        assertEquals(expectedPage.getPosts().size(), actualPage.getPosts().size());
         assertEquals(expectedPage.getPosts(), actualPage.getPosts());
         assertEquals(expectedPage.getHasNext(), actualPage.getHasNext());
         assertEquals(expectedPage.getHasPrev(), actualPage.getHasPrev());

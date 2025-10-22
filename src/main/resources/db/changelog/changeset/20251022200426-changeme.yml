@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20251022200426"
+      author: Rustam Khudoyan
+      comment: "Создание таблицы постов"
+      changes:
+        - createSequence:
+            schemaName: blog_app
+            sequenceName: post_id_seq
+            startValue: 1
+            incrementBy: 50
+        - createTable:
+            schemaName: blog_app
+            tableName: post
+            remarks: Таблица постов
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  remarks: Идентификатор поста
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: post_pk
+              - column:
+                  name: title
+                  type: varchar(50)
+                  remarks: Заголовок поста
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: text
+                  remarks: Контент поста
+                  constraints:
+                    nullable: false
+              - column:
+                  name: likes_count
+                  type: bigint
+                  defaultValue: "0"
+                  remarks: Количество лайков
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_name
+                  type: text

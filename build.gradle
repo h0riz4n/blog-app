@@ -48,3 +48,14 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.processResources {
+	filesMatching("**/application*.yml") {
+		expand(
+			name: project.name,
+			version: project.version,
+			group: project.group,
+			description: project.description
+		)
+	}
+}

@@ -7,6 +7,19 @@ spring:
     application:
         name: '@name@'
 
+    servlet:
+        multipart:
+            max-file-size: 5MB
+            max-request-size: 10MB
+    
+    mvc:
+        problemdetails:
+            enabled: true
+
+    jackson:
+        mapper:
+            DEFAULT_VIEW_INCLUSION: true
+
     output:
         ansi:
             enabled: ALWAYS
@@ -16,8 +29,8 @@ spring:
         username: ${DB_USER}
         password: ${DB_PASSWORD}
         hikari:
-            maximum-pool-size: 2
-            minimum-idle: 2
+            maximum-pool-size: 11
+            minimum-idle: 4
 
     jpa:
         open-in-view: false
@@ -31,7 +44,6 @@ spring:
                 format_sql: true
                 jdbc:
                 batch_size: 100
-
 
     liquibase:
         enabled: true

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import ru.yandex.blog_app.exception.ApiServiceException;
 
@@ -32,7 +31,7 @@ public class RestControllerHandler extends ResponseEntityExceptionHandler  {
 
     private ProblemDetail buildProblemDetail(WebRequest webRequest, Exception ex, HttpStatus httpStatus, Map<String, Object> properties) {
         var uri = URI.create(webRequest.getContextPath());
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(httpStatus, ex.getMessage());
+        var problemDetail = ProblemDetail.forStatusAndDetail(httpStatus, ex.getMessage());
         problemDetail.setInstance(uri);
         problemDetail.setTitle(httpStatus.getReasonPhrase());
         problemDetail.setProperties(properties);

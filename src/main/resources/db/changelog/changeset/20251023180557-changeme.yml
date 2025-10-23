@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20251023180557"
+      author: Rustam Khudoyan
+      comment: Создание таблицы комментариев
+      changes:
+        - createSequence:
+            schemaName: blog_app
+            sequenceName: comment_id_seq
+            startValue: 1
+            incrementBy: 50
+        - createTable:
+            schemaName: blog_app
+            tableName: comment
+            remarks: Таблица постов
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  remarks: Идентификатор комментария
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: comment_pk
+              - column:
+                  name: post_id
+                  type: bigint
+                  remarks: Идентификатор поста
+                  constraints:
+                    referencedTableSchemaName: blog_app
+                    referencedTableName: post
+                    referencedColumnNames: id
+                    foreignKeyName: comment_post_id_fk
+                    deleteCascade: true
+              - column:
+                  name: text
+                  type: varchar(50)
+                  remarks: Текст комментария
+                  constraints:
+                    nullable: false

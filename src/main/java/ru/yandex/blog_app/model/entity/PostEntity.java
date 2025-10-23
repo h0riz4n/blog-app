@@ -1,15 +1,20 @@
 package ru.yandex.blog_app.model.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.hibernate.proxy.HibernateProxy;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -17,6 +22,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+import lombok.Builder.Default;
 
 @Entity
 @Getter
@@ -25,6 +32,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "post")
+@ToString(exclude = { "tags", "comments" })
 public class PostEntity implements Serializable {
 
     @Id
@@ -44,6 +52,14 @@ public class PostEntity implements Serializable {
 
     @Column(name = "file_name", nullable = true)
     private String fileName;
+
+    @Default
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<TagEntity> tags = new ArrayList<>();
+
+    @Default
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<CommentEntity> comments = new ArrayList<>();
 
     @Override 
     public final boolean equals(Object o) { 

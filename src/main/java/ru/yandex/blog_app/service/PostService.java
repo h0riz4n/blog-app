@@ -13,6 +13,10 @@ import ru.yandex.blog_app.repository.PostRepository;
 public class PostService {
 
     private final PostRepository postRepo;
+    
+    public PostEntity create(PostEntity post) {
+        return postRepo.save(post);
+    }
 
     public PostEntity getById(Long id) {
         return postRepo.findById(id)

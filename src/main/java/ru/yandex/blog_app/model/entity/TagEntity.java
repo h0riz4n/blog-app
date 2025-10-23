@@ -52,8 +52,8 @@ public class TagEntity implements Serializable {
         Class<?> oEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass(); 
         Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass(); 
         if (thisEffectiveClass != oEffectiveClass) return false; 
-        TagEntity notificationAttempt = (TagEntity) o; 
-        return getId() != null && Objects.equals(getId(), notificationAttempt.getId()); 
+        TagEntity tag = (TagEntity) o; 
+        return getId() != null && Objects.equals(getId(), tag.getId()); 
     }
     
     @Override 

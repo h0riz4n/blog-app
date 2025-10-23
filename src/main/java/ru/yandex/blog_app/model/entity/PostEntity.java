@@ -50,7 +50,7 @@ public class PostEntity implements Serializable {
     @Column(name = "likes_count", nullable = false)
     private Long likesCount;
 
-    @Column(name = "file_name", nullable = true)
+    @Column(name = "file_name")
     private String fileName;
 
     @Default
@@ -68,8 +68,8 @@ public class PostEntity implements Serializable {
         Class<?> oEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass(); 
         Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass(); 
         if (thisEffectiveClass != oEffectiveClass) return false; 
-        PostEntity notificationAttempt = (PostEntity) o; 
-        return getId() != null && Objects.equals(getId(), notificationAttempt.getId()); 
+        PostEntity post = (PostEntity) o; 
+        return getId() != null && Objects.equals(getId(), post.getId()); 
     }
     
     @Override 

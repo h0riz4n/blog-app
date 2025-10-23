@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.3.5'
+	id 'org.springframework.boot' version '3.5.1'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -51,11 +51,11 @@ tasks.named('test') {
 
 tasks.processResources {
 	filesMatching("**/application*.yml") {
-		expand(
-			name: project.name,
-			version: project.version,
-			group: project.group,
-			description: project.description
-		)
-	}
+        filter {
+            it.replaceAll('@name@', project.name)
+            	.replaceAll('@version@', project.version)
+               	.replaceAll('@group@', project.group)
+               	.replaceAll('@description@', project.description)
+        }
+    }
 }

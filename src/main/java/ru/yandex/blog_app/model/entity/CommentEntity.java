@@ -28,7 +28,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tag")
+@Table(name = "comment")
 @ToString(exclude = "post")
 public class CommentEntity implements Serializable {
 

@@ -54,11 +54,11 @@ public class PostEntity implements Serializable {
     private String fileName;
 
     @Default
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TagEntity> tags = new ArrayList<>();
 
     @Default
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<CommentEntity> comments = new ArrayList<>();
 
     @Override 

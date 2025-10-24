@@ -34,7 +34,7 @@ spring:
 
     jpa:
         open-in-view: false
-        show-sql: false
+        show-sql: true
         hibernate:
             ddl-auto: validate
         properties:
@@ -49,3 +49,12 @@ spring:
         enabled: true
         change-log: classpath:/db/changelog/db.changelog-master.yml
         default-schema: blog_app
+
+app:
+    info:
+        title: '@name@'
+        version: '@version@'
+        description: '@description@'
+    server:
+        url: ${HOST_URL:http://localhost:8080}${server.servlet.context-path}
+        description: Сервер

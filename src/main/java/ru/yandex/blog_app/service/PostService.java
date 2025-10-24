@@ -15,6 +15,7 @@ public class PostService {
     private final PostRepository postRepo;
     
     public PostEntity create(PostEntity post) {
+        post.getTags().forEach(tag -> tag.setPost(post));
         return postRepo.save(post);
     }
     

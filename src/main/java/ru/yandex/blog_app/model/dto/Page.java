@@ -21,5 +21,5 @@ public class Page<T> {
 
     private Boolean hasNext;
 
-    private Long lastPage;
+    private Integer lastPage;
 }

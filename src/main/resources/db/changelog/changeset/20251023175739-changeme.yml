@@ -2,7 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: "20251023175739"
       author: Rustam Khudoyan
-      comment: "Создание таблиц тегов"
+      comment: Создание таблицы тегов
       changes:
         - createSequence:
             schemaName: blog_app

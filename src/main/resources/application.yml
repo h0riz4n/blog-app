@@ -50,6 +50,9 @@ spring:
         change-log: classpath:/db/changelog/db.changelog-master.yml
         default-schema: blog_app
 
+blog-app:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+
 app:
     info:
         title: '@name@'

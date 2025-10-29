@@ -39,10 +39,9 @@ public class RestControllerHandler extends ResponseEntityExceptionHandler  {
         return this.handleExceptionInternal(ex, body, headers, status, webRequest);
     }
 
-
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
-        log.debug(ex.getMessage());
+        log.debug("{}: {}", ex,getClass().getName(), ex.getMessage());
         return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 

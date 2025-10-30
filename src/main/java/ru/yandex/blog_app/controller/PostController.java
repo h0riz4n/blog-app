@@ -1,11 +1,14 @@
 package ru.yandex.blog_app.controller;
 
+import java.net.URI;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -41,14 +44,14 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    @JsonView(PostView.Details.class)
     @Operation(summary = "Создание поста")
     public ResponseEntity<PostDto> create(
-        @RequestBody @Validated(PostView.Create.class) @JsonView(PostView.Create.class) PostDto dto
+        @RequestBody @Validated(PostView.Create.class) @JsonView(PostView.Create.class) PostDto dto,
+        WebRequest webRequest
     ) {
         var post = postMapper.toDto(postService.create(postMapper.toEntity(dto)));
         return ResponseEntity
-            .created(UriComponentsBuilder.fromPath("/api/posts/{id}").build(post.getId()))
+            .created(getCreatedUri(webRequest, post.getId()))
             .body(post);
     }
 
@@ -88,5 +91,11 @@ public class PostController {
     @Operation(summary = "Лайк поста")
     public ResponseEntity<Long> like(@PathVariable @NotNull @Positive Long id) {
         return ResponseEntity.ok(postService.like(id));
+    }
+
+    private URI getCreatedUri(WebRequest request, Long id) {
+        return UriComponentsBuilder
+            .fromPath("{contextPath}/api/posts/{id}")
+            .build(request.getContextPath(), id);
     }
 }

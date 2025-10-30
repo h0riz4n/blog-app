@@ -28,7 +28,7 @@ import lombok.Builder.Default;
 @Entity
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "post")
@@ -47,8 +47,9 @@ public class PostEntity implements Serializable {
     @Column(name = "text", nullable = false)
     private String text;
 
+    @Default
     @Column(name = "likes_count", nullable = false)
-    private Long likesCount;
+    private Long likesCount = 0L;
 
     @Column(name = "file_name")
     private String fileName;

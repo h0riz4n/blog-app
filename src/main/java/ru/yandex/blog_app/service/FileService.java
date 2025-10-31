@@ -5,24 +5,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.RequiredArgsConstructor;
+import ru.yandex.blog_app.properties.BlogAppProperty;
+
 @Service
+@RequiredArgsConstructor
+@EnableConfigurationProperties(BlogAppProperty.class)
 public class FileService {
 
-    private final String UPLOAD_PATH;
-
-    public FileService(@Value("${blog-app.upload-dir}") String uploadPathDir) {
-        this.UPLOAD_PATH = uploadPathDir;
-    }
+    private final BlogAppProperty property;
 
     public String upload(MultipartFile file) {
         try {
-            Path uploadDir = Paths.get(UPLOAD_PATH);
+            Path uploadDir = Paths.get(property.getUploadDir());
 
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
@@ -39,7 +40,7 @@ public class FileService {
 
     public Resource download(String filename) {
         try {
-            Path filePath = Paths.get(UPLOAD_PATH).resolve(filename).normalize();
+            Path filePath = Paths.get(property.getUploadDir()).resolve(filename).normalize();
             byte[] content = Files.readAllBytes(filePath);
 
             return new ByteArrayResource(content);
@@ -50,7 +51,7 @@ public class FileService {
 
     public void delete(String fileName) {
         try {
-            Files.deleteIfExists(Paths.get(UPLOAD_PATH).resolve(fileName).normalize());
+            Files.deleteIfExists(Paths.get(property.getUploadDir()).resolve(fileName).normalize());
         } catch (IOException e) {
             throw new RuntimeException("Не удалось удалить файл: " + fileName, e);
         }

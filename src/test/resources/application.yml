@@ -50,6 +50,7 @@ spring:
 
 blog-app:
     upload-dir: ./uploads
+    cors-origins: "*"
 
 app:
     info:

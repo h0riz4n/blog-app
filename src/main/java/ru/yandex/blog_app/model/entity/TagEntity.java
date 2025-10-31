@@ -3,7 +3,6 @@ package ru.yandex.blog_app.model.entity;
 import java.io.Serializable;
 import java.util.Objects;
 
-import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.proxy.HibernateProxy;

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "app")
+@ConfigurationProperties(prefix = "blog-app")
 public class BlogAppProperty {
 
     private String uploadDir;

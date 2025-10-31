@@ -43,7 +43,7 @@ spring:
                 default_schema: blog_app
                 format_sql: true
                 jdbc:
-                batch_size: 100
+                    batch_size: 100
 
     liquibase:
         enabled: true
@@ -52,7 +52,7 @@ spring:
 
 blog-app:
     upload-dir: ${UPLOAD_DIR:./uploads}
-    cors-origins: ${CORS_ORIGINS:"*"}
+    cors-origins: ${CORS_ORIGINS:*}
 
 app:
     info:

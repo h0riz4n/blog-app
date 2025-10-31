@@ -35,8 +35,8 @@ public class PostRepositoryTest {
             .text("tag1")
             .post(mockPostEntity)
             .build();
-        this.mockPostEntity.setTags(List.of(mockTag));
-        this.mockPostEntity.setId(postRepo.save(mockPostEntity).getId());
+        this.mockPostEntity.getTags().add(mockTag);
+        this.mockPostEntity = postRepo.save(mockPostEntity);
     }
 
     @AfterEach

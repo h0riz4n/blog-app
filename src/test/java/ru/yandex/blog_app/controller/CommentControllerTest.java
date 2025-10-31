@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import ru.yandex.blog_app.model.dto.CommentDto;
 import ru.yandex.blog_app.model.view.CommentView;
-import ru.yandex.blog_app.util.InitialDataTest;
+import ru.yandex.blog_app.util.DataFactory;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Tag("integration")
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-public class CommentControllerTest extends InitialDataTest {
+public class CommentControllerTest extends DataFactory {
 
     @Autowired
     private MockMvc mockMvc;

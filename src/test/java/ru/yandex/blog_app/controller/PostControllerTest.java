@@ -2,80 +2,30 @@ package ru.yandex.blog_app.controller;
 
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import ru.yandex.blog_app.model.dto.PostDto;
 import ru.yandex.blog_app.model.view.PostView;
+import ru.yandex.blog_app.util.DataFactory;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Tag("integration")
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-public class PostControllerTest {
+public class PostControllerTest extends DataFactory {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        this.objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        jdbcTemplate.execute("""
-            INSERT INTO blog_app.post (id, title, text, likes_count) VALUES 
-            (1, 'Первый пост', 'Текст первого поста', 0),
-            (2, 'Второй пост', 'Текст второго поста', 0);
-        """);
-        
-        jdbcTemplate.execute("""
-            INSERT INTO blog_app.tag (id, post_id, text) VALUES (1, 1, 'тег1'), (2, 2, 'тег2');
-        """);
-        
-        jdbcTemplate.execute("""
-            INSERT INTO blog_app.comment (id, post_id, text) VALUES
-            (1, 1, 'Комментарий 1 к первому посту'),
-            (2, 1, 'Комментарий 2 к первому посту'),
-            (3, 2, 'Комментарий 1 ко второму посту'),
-            (4, 2, 'Комментарий 2 ко второму посту');
-        """);
-
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.post_id_seq RESTART WITH 3");
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.tag_id_seq RESTART WITH 3");
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.comment_id_seq RESTART WITH 5");
-    }
-
-    @AfterEach
-    void clear() {
-        jdbcTemplate.execute("DELETE FROM blog_app.comment");
-        jdbcTemplate.execute("DELETE FROM blog_app.tag");
-        jdbcTemplate.execute("DELETE FROM blog_app.post");
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.post_id_seq RESTART WITH 1");
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.tag_id_seq RESTART WITH 1");
-        jdbcTemplate.execute("ALTER SEQUENCE blog_app.comment_id_seq RESTART WITH 1");
-    }
-
 
     @Test
     public void create() throws Exception {
@@ -95,8 +45,8 @@ public class PostControllerTest {
 
         mockMvc.perform(mockRequestBody)
             .andExpect(status().isCreated())
-            .andDo(print())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$", hasKey("id")));
 
         mockMvc.perform(mockBadRequestBody)
             .andExpect(status().isBadRequest())
@@ -106,20 +56,22 @@ public class PostControllerTest {
     @Test
     public void getAll() throws Exception {
         var mockRequest = get("/api/posts")
-            .param("search", "пост #тег1")
+            .param("search", "title")
             .param("pageNumber", "0")
-            .param("pageSize", "2");
+            .param("pageSize", "10");
         
         mockMvc.perform(mockRequest)
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.posts", hasSize(2)));
     }
 
     @Test
     public void getById() throws Exception {
-        mockMvc.perform(get("/api/posts/{id}", 2L))
+        mockMvc.perform(get("/api/posts/{id}", firstPost.getId()))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.id").value(firstPost.getId()));
 
         mockMvc.perform(get("/api/posts/{id}", 999L))
             .andExpect(status().isNotFound())
@@ -135,7 +87,7 @@ public class PostControllerTest {
             .tags(List.of("tag1", "tag2"))
             .build();
 
-        var mockRequest = put("/api/posts/{id}", 1L)
+        var mockRequest = put("/api/posts/{id}", firstPost.getId())
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .content(objectMapper.writerWithView(PostView.Modify.class).writeValueAsString(mockDto));
 
@@ -143,13 +95,14 @@ public class PostControllerTest {
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .content(objectMapper.writerWithView(PostView.Modify.class).writeValueAsString(mockDto));
 
-        var mockBadRequestRequst = put("/api/posts/{id}", 1L)
+        var mockBadRequestRequst = put("/api/posts/{id}", firstPost.getId())
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .content(objectMapper.writerWithView(PostView.Modify.class).writeValueAsString(mockDto.toBuilder().text("").build()));
 
         mockMvc.perform(mockRequest)
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.text").value(mockDto.getText()));
         
         mockMvc.perform(mockNotFoundRequest)
             .andExpect(status().isNotFound())
@@ -162,7 +115,7 @@ public class PostControllerTest {
 
     @Test
     public void deleteById() throws Exception {
-        mockMvc.perform(delete("/api/posts/{id}", 1L))
+        mockMvc.perform(delete("/api/posts/{id}", firstPost.getId()))
             .andExpect(status().isNoContent());
 
         mockMvc.perform(delete("/api/posts/{id}", 0L))
@@ -174,9 +127,9 @@ public class PostControllerTest {
 
     @Test
     public void like() throws Exception {
-        mockMvc.perform(post("/api/posts/{id}/likes", 1L))
+        mockMvc.perform(post("/api/posts/{id}/likes", firstPost.getId()))
             .andExpect(status().isOk())
-            .andExpect(content().string("1"));
+            .andExpect(content().string("%s".formatted(firstPost.getLikesCount() + 1)));
 
         mockMvc.perform(post("/api/posts/{id}/likes", 999L))
             .andExpect(status().isNotFound());

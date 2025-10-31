@@ -3,6 +3,9 @@ package ru.yandex.blog_app.model.entity;
 import java.io.Serializable;
 import java.util.Objects;
 
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.proxy.HibernateProxy;
 
 import jakarta.persistence.Column;
@@ -39,6 +42,7 @@ public class TagEntity implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "post_id", nullable = false, updatable = false)
     private PostEntity post;
 

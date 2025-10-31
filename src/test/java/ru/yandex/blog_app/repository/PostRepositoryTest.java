@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.model.entity.TagEntity;
 import ru.yandex.blog_app.model.filter.PostFilterModel;
 import ru.yandex.blog_app.repository.specification.PostSpecification;
 
@@ -30,6 +31,11 @@ public class PostRepositoryTest {
             .text("text")
             .likesCount(0L)
             .build();
+        TagEntity mockTag = TagEntity.builder()
+            .text("tag1")
+            .post(mockPostEntity)
+            .build();
+        this.mockPostEntity.setTags(List.of(mockTag));
         this.mockPostEntity.setId(postRepo.save(mockPostEntity).getId());
     }
 
@@ -68,6 +74,17 @@ public class PostRepositoryTest {
         PostFilterModel filter = PostFilterModel.builder()
             .title("title")
             .tags(null)
+            .build();
+
+        var posts = postRepo.findAll(new PostSpecification(filter));
+        assertEquals(List.of(mockPostEntity), posts);
+    }
+
+    @Test
+    public void filterTestWithTags() {
+        PostFilterModel filter = PostFilterModel.builder()
+            .title("title")
+            .tags(List.of("tag1"))
             .build();
 
         var posts = postRepo.findAll(new PostSpecification(filter));

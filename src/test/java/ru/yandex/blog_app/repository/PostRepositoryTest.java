@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.model.filter.PostFilterModel;
+import ru.yandex.blog_app.repository.specification.PostSpecification;
 
 @DataJpaTest
 public class PostRepositoryTest {
@@ -59,5 +61,16 @@ public class PostRepositoryTest {
     public void deleteById() {
         postRepo.deleteById(mockPostEntity.getId());
         assertTrue(postRepo.findAll().isEmpty());
+    }
+
+    @Test
+    public void filterTest() {
+        PostFilterModel filter = PostFilterModel.builder()
+            .title("title")
+            .tags(null)
+            .build();
+
+        var posts = postRepo.findAll(new PostSpecification(filter));
+        assertEquals(List.of(mockPostEntity), posts);
     }
 }

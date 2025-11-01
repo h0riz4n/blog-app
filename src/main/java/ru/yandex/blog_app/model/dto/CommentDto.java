@@ -19,17 +19,17 @@ import ru.yandex.blog_app.model.view.CommentView;
 @AllArgsConstructor
 public class CommentDto {
 
-    @NotNull(groups = { CommentView.Update.class })
-    @Positive(groups = { CommentView.Update.class })
-    @JsonView({ CommentView.Details.class, CommentView.Update.class })
+    @NotNull(groups = { CommentView.Modify.class })
+    @Positive(groups = { CommentView.Modify.class })
+    @JsonView({ CommentView.Details.class, CommentView.Modify.class })
     private Long id;
 
-    @NotNull(groups = { CommentView.Create.class, CommentView.Update.class })
-    @Positive(groups = { CommentView.Create.class, CommentView.Update.class })
-    @JsonView({ CommentView.Summary.class, CommentView.Create.class, CommentView.Update.class })
+    @NotNull(groups = { CommentView.Create.class, CommentView.Modify.class })
+    @Positive(groups = { CommentView.Create.class, CommentView.Modify.class })
+    @JsonView({ CommentView.Summary.class, CommentView.Create.class, CommentView.Modify.class })
     private Long postId;
 
-    @NotEmpty(groups = { CommentView.Create.class, CommentView.Update.class })
-    @JsonView({ CommentView.Summary.class, CommentView.Create.class, CommentView.Update.class })
+    @NotEmpty(groups = { CommentView.Create.class, CommentView.Modify.class })
+    @JsonView({ CommentView.Summary.class, CommentView.Create.class, CommentView.Modify.class })
     private String text;
 }

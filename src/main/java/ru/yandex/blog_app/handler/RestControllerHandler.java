@@ -1,52 +1,73 @@
 package ru.yandex.blog_app.handler;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import ru.yandex.blog_app.exception.ApiServiceException;
-import ru.yandex.blog_app.model.util.MessageResponse;
 
+@Slf4j
 @RestControllerAdvice
-public class RestControllerHandler {
+public class RestControllerHandler extends ResponseEntityExceptionHandler  {
 
     @ExceptionHandler(ApiServiceException.class)
-    public final ResponseEntity<MessageResponse<String>> handleApiServiceException(ApiServiceException e) {
+    public final ResponseEntity<ProblemDetail> handleApiServiceException(ApiServiceException ex) {
         return ResponseEntity
-            .status(e.getStatus())
-            .body(new MessageResponse<>("Error", e.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<MessageResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException e) {
-        Map<String, String> errorMap = new HashMap<>();
-        e.getBindingResult().getAllErrors().forEach(error -> errorMap.put(((FieldError) error).getField(), error.getDefaultMessage()));
-        
-        return ResponseEntity
-            .badRequest()
-            .body(new MessageResponse<>("Error", errorMap));
+            .status(ex.getStatus())
+            .body(buildProblemDetail(ex, ex.getStatus()));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<MessageResponse<Map<String, String>>> handleConstraintViolationException(ConstraintViolationException e) {
-        Map<String, String> errorMap = new HashMap<>();
-        e.getConstraintViolations().forEach(error -> errorMap.put(error.getPropertyPath().toString(), error.getMessage()));
-
+    public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException ex) {
+        var errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(v -> errors.put(v.getPropertyPath().toString(), v.getMessage()));
+        ProblemDetail body = buildProblemDetail(ex, HttpStatus.BAD_REQUEST, Map.of("validation", errors));
         return ResponseEntity
             .badRequest()
-            .body(new MessageResponse<>("Error", errorMap));
+            .body(body);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public final ResponseEntity<MessageResponse<String>> handleRuntimeException(RuntimeException ex) {
-        return ResponseEntity
-            .internalServerError()
-            .body(new MessageResponse<>("Error", ex.getMessage()));
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest webRequest) {
+        var errorMap = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> errorMap.put(((FieldError) error).getField(), error.getDefaultMessage()));
+        var body = buildProblemDetail(ex, HttpStatus.BAD_REQUEST, Map.of("validation", errorMap));
+        return this.handleExceptionInternal(ex, body, headers, status, webRequest);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        log.debug("{}: {}", ex,getClass().getName(), ex.getMessage());
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    private ProblemDetail buildProblemDetail(Exception ex, HttpStatus httpStatus) {
+        return buildProblemDetail(ex, httpStatus, null);
+    }
+
+    private ProblemDetail buildProblemDetail(Exception ex, HttpStatus httpStatus, Map<String, Object> properties) {
+        var uri = URI.create(((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest().getRequestURI());
+        var problemDetail = ProblemDetail.forStatusAndDetail(httpStatus, ex.getMessage());
+        problemDetail.setInstance(uri);
+        problemDetail.setTitle(httpStatus.getReasonPhrase());
+        problemDetail.setProperties(properties);
+        return problemDetail;
     }
 }

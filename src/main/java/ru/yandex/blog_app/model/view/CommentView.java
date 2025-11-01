@@ -6,5 +6,5 @@ public interface CommentView {
     public static interface Details extends Summary {}
 
     public static interface Create {}
-    public static interface Update {}
+    public static interface Modify {}
 }

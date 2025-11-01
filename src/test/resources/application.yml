@@ -1,0 +1,62 @@
+server:
+    port: 0
+    servlet:
+        context-path: ${CONTEXT_PATH:}
+
+spring:
+    application:
+        name: '@name@'
+
+    servlet:
+        multipart:
+            max-file-size: 5MB
+            max-request-size: 10MB
+    
+    mvc:
+        problemdetails:
+            enabled: true
+
+    jackson:
+        mapper:
+            DEFAULT_VIEW_INCLUSION: true
+
+    output:
+        ansi:
+            enabled: ALWAYS
+
+    datasource:
+        url: jdbc:h2:mem:usersdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_UPPER=false;INIT=CREATE SCHEMA IF NOT EXISTS blog_app
+        username: sa
+        password:
+        hikari:
+            maximum-pool-size: 11
+            minimum-idle: 4
+
+    jpa:
+        open-in-view: false
+        show-sql: true
+        hibernate:
+            ddl-auto: create-drop
+        properties:
+            hibernate:
+                order_inserts: true
+                default_schema: blog_app
+                format_sql: true
+                jdbc:
+                batch_size: 100
+
+    liquibase:
+        enabled: false
+
+blog-app:
+    upload-dir: ./uploads
+    cors-origins: "*"
+
+app:
+    info:
+        title: '@name@'
+        version: '@version@'
+        description: '@description@'
+    server:
+        url: ${HOST_URL:http://localhost:8080}${server.servlet.context-path}
+        description: Сервер

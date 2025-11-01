@@ -1,21 +1,69 @@
 package ru.yandex.blog_app.service;
 
 import java.util.List;
-import java.util.Map;
 
-import ru.yandex.blog_app.model.domain.Comment;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-public interface CommentService {
+import lombok.RequiredArgsConstructor;
+import ru.yandex.blog_app.exception.ApiServiceException;
+import ru.yandex.blog_app.model.entity.CommentEntity;
+import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.repository.CommentRepository;
 
-    List<Comment> getAllByPostId(Long postId);
+@Service
+@RequiredArgsConstructor
+public class CommentService {
 
-    Comment getByIdAndPostId(Long id, Long postId);
+    private final CommentRepository commentRepo;
 
-    Comment addComment(Long postId, Comment comment);
+    public List<CommentEntity> getAllByPostIn(List<PostEntity> posts) {
+        return commentRepo.findAllByPostIn(posts);
+    }
 
-    Comment updateComment(Long postId, Long commentId, Comment newComment);
+    public List<CommentEntity> getAllByPostId(Long postId) {
+        return commentRepo.findAllByPostId(postId);
+    }
 
-    void deleteByIdAndPostId(Long commentId, Long postId);
+    public CommentEntity getByIdAndPostId(Long id, Long postId) {
+        return commentRepo.findByIdAndPostId(id, postId)
+            .orElseThrow(() -> new ApiServiceException(HttpStatus.NOT_FOUND, "Кооментарий не найден"));
+    }
 
-    Map<Long, Long> commentsCount(List<Long> postIds);
+    @Transactional
+    public CommentEntity create(PostEntity post, CommentEntity comment) {
+        comment.setPost(post);
+        validateOnCreate(post.getId(), comment);
+        return commentRepo.save(comment);
+    }
+
+    @Transactional
+    public CommentEntity update(PostEntity post, Long id, CommentEntity newComment) {
+        CommentEntity comment = commentRepo.findById(id)
+            .orElseThrow(() -> new ApiServiceException(HttpStatus.NOT_FOUND, "Комментарий не найден"));
+
+        validateOnUpdate(post.getId(), id, newComment);
+
+        comment.setText(newComment.getText());
+        return commentRepo.save(comment);
+    }
+
+    public void deleteById(Long id) {
+        commentRepo.deleteById(id);
+    }
+
+    private void validateOnCreate(Long postId, CommentEntity comment) {
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new ApiServiceException(HttpStatus.BAD_REQUEST, "Не совпадают идентификаторы поста в теле и в пути");
+        }
+    }
+
+    private void validateOnUpdate(Long postId, Long commentId, CommentEntity comment) {
+        validateOnCreate(postId, comment);
+
+        if (!comment.getId().equals(commentId)) {
+            throw new ApiServiceException(HttpStatus.BAD_REQUEST, "Не совпадают идентификаторы комментария в теле и в пути");
+        }
+    }
 }

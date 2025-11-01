@@ -1,10 +1,9 @@
 package ru.yandex.blog_app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,54 +12,41 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import ru.yandex.blog_app.dao.TagDao;
-import ru.yandex.blog_app.model.domain.Tag;
-import ru.yandex.blog_app.service.impl.TagServiceImpl;
+import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.model.entity.TagEntity;
+import ru.yandex.blog_app.repository.TagRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class TagServiceTest {
 
     @Mock
-    private TagDao tagDao;
+    private TagRepository tagRepo;
 
     @InjectMocks
-    private TagServiceImpl tagService;
+    private TagService tagService;
 
-    private Long mockPostId;
-    private Long mockTagId;
-    private Tag mockTag;
+    private PostEntity mockPost;
+    private TagEntity mockTag;
 
     @BeforeEach
-    public void setUp() {
-        this.mockPostId = 1L;
-        this.mockTagId = 1L;
-        this.mockTag = Tag.builder()
-            .postId(mockPostId)
-            .id(mockTagId)
-            .text("text")
+    void setUp() {
+        this.mockPost = PostEntity.builder()
+            .id(1L)
+            .build();
+        this.mockTag = TagEntity.builder()
+            .id(1L)
+            .post(mockPost)
+            .text("tag")
             .build();
     }
 
     @Test
-    public void create() {
-        when(tagDao.saveAll(List.of(mockTag)))
+    public void testGetAllByPostIn() {
+        when(tagRepo.findAllByPostIn(List.of(mockPost)))
             .thenReturn(List.of(mockTag));
-
-        assertEquals(List.of(mockTag), tagService.create(List.of(mockTag)));
-    }
-
-    @Test
-    public void getAllByPostIds() {
-        var mockPostIds = List.of(mockPostId);
-        var mockMapOfTags = Map.of(
-            mockPostId, List.of(mockTag)
-        );
-
-        when(tagDao.findAllByPostIds(mockPostIds))
-            .thenReturn(mockMapOfTags);
-
-        var mapOfTags = tagService.getAllByPostIds(mockPostIds);
-        assertEquals(mockMapOfTags, mapOfTags);
-        assertNotNull(mapOfTags.get(mockPostId));
+        
+        var expectedTags = List.of(mockTag);
+        var actualTags = tagService.getAllByPostIn(List.of(mockPost));
+        assertEquals(expectedTags, actualTags);
     }
 }

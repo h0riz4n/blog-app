@@ -1,33 +1,36 @@
 package ru.yandex.blog_app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.io.Resource;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import ru.yandex.blog_app.dao.PostDao;
-import ru.yandex.blog_app.exception.ApiServiceException;
-import ru.yandex.blog_app.model.domain.Post;
-import ru.yandex.blog_app.model.domain.Tag;
-import ru.yandex.blog_app.model.dto.Page;
-import ru.yandex.blog_app.service.impl.PostServiceImpl;
+import ru.yandex.blog_app.model.entity.CommentEntity;
+import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.model.entity.TagEntity;
+import ru.yandex.blog_app.repository.PostRepository;
+import ru.yandex.blog_app.repository.specification.PostSpecification;
 
 @ExtendWith(MockitoExtension.class)
 public class PostServiceTest {
+
+    @Mock
+    private TagService tagService;
 
     @Mock
     private FileService fileService;
@@ -36,204 +39,104 @@ public class PostServiceTest {
     private CommentService commentService;
 
     @Mock
-    private TagService tagService;
-
-    @Mock
-    private PostDao postDao;
+    private PostRepository postRepo;
 
     @InjectMocks
-    private PostServiceImpl postService;
+    private PostService postService;
 
-    private Long mockPostId;
-    private Tag mockTag;
-    private Post mockPost;
+    private PostEntity mockPost;
+    private TagEntity mockTag;
+    private CommentEntity mockComment;
 
     @BeforeEach
-    public void setUp() {
-        this.mockPostId = 1L;
-        this.mockTag = Tag.builder()
+    void setUp() {
+        this.mockPost = PostEntity.builder()
             .id(1L)
-            .text("tag1")
-            .postId(mockPostId)
-            .build();
-        this.mockPost = Post.builder()
-            .likesCount(0L)
-            .commentsCount(0L)
-            .title("title")
             .text("text")
+            .title("title")
+            .build();
+        this.mockComment = CommentEntity.builder()
+            .id(1L)
+            .post(mockPost)
+            .text("comment")
+            .build();
+        this.mockTag = TagEntity.builder()
+            .id(1L)
+            .post(mockPost)
+            .text("tag")
+            .build();
+    }
+
+    @AfterEach
+    void afterEach() {
+        this.mockPost = null;
+        this.mockTag = null;
+        this.mockComment = null;
+    }
+
+    @Test
+    public void testCreate() {
+        var newPost = mockPost.toBuilder()
             .tags(List.of(mockTag))
             .build();
+
+        when(postRepo.save(newPost))
+            .thenReturn(newPost);
+
+        var createdPost = postService.create(newPost);
+        assertEquals(newPost, createdPost);
     }
 
     @Test
-    public void postService_create_returnSavedPost() {
-        List<Tag> mockTags = List.of(Tag.builder().text("tag1").build());
+    public void testGetById() {
+        Long id = mockPost.getId();
 
-        when(postDao.save(mockPost))
-            .thenReturn(mockPost.toBuilder().id(mockPostId).build());
+        when(postRepo.findById(id))
+            .thenReturn(Optional.of(mockPost));
 
-        when(tagService.create(mockTags))
-            .thenReturn(
-                mockTags.stream()
-                    .peek(tag -> tag.setId(1L))
-                    .toList()
-            );
-
-        Post post = postService.create(mockPost);
-
-        assertEquals(Long.valueOf(mockPostId), post.getId());
-        assertEquals(List.of(mockTag), post.getTags());
+        var actualPost = postService.getById(id);
+        assertEquals(mockPost, actualPost);
     }
 
     @Test
-    public void postService_getAll_returnPageOfPosts() {
-        Post mockPost = this.mockPost.toBuilder()
-            .id(mockPostId)
-            .tags(Collections.emptyList())
-            .build();
+    public void testUpdateById() {
+        Long id = mockPost.getId();
+        var newPost = mockPost.toBuilder().text("new text").build();
 
-        String search = "test #tag1";
+        when(postRepo.findById(id))
+            .thenReturn(Optional.of(mockPost));
+        
+        when(postRepo.save(newPost))
+            .thenReturn(newPost);
+
+        var actualPost = postService.updateById(id, newPost);
+        assertEquals(newPost, actualPost);
+        assertEquals(newPost.getText(), actualPost.getText());
+    }
+
+    @Test
+    public void testGetAllByTitleAndTags() {
+        String search = "title #tag";
         Integer pageNumber = 0;
-        Integer pageSize = 1;
+        Integer pageSize = 10;
 
-        when(postDao.findAll("test", List.of("tag1"), pageNumber, pageSize))
-            .thenReturn(
-                Page.<Post>builder()
-                    .hasNext(true)
-                    .hasPrev(false)
-                    .lastPage(1L)
-                    .posts(List.of(mockPost))
-                    .build()
-            );
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
-        when(tagService.getAllByPostIds(List.of(1L)))
-            .thenReturn(Map.of(1L, List.of(mockTag)));
+        var expectedPosts = List.of(mockPost);
 
-        when(commentService.commentsCount(List.of(1L)))
-            .thenReturn(Map.of(0L, 0L));
-
-        Page<Post> posts = postService.getAll(search, pageNumber, pageSize);
-
-        assertEquals(
-            false, 
-            posts.getPosts().isEmpty()
-        );
-
-        assertEquals(
-            List.of(
-                mockPost.toBuilder()
-                    .tags(List.of(mockTag))
-                    .build()
-            ),
-            posts.getPosts()
-        );
-    }
-
-    @Test
-    public void postService_getById_returnCorrectPost() {
-        Post mockPost = this.mockPost.toBuilder()
-            .id(mockPostId)
-            .build();
-
-        when(postDao.findById(1L))
-            .thenReturn(Optional.of(mockPost));
-
-        Post post = postService.getById(1L);
-
-        assertEquals(mockPost.getId(), post.getId());
-    }
-
-    @Test
-    public void postService_getById_throwsApiServiceException() {
-        when(postDao.findById(1L))
-            .thenReturn(Optional.empty());
+        when(postRepo.findAll(any(PostSpecification.class), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(expectedPosts, pageable, 1));
         
-        assertThrows(ApiServiceException.class, () -> postService.getById(1L));
-    }
-
-    @Test
-    public void postService_updateById_returnUpdatedPost() {
-        String mockText = "new text";
-        Post mockPost = this.mockPost.toBuilder().id(mockPostId).text("old text").build();
-
-        when(postDao.findById(1L))
-            .thenReturn(Optional.of(mockPost));
-
-        doNothing()
-            .when(postDao)
-            .updateText(anyLong(), anyString());
-
-        postService.updateById(mockPostId, mockPost.toBuilder().text(mockText).build());
-
-        assertEquals(mockText, mockPost.getText());
-        assertThrows(ApiServiceException.class, () -> postService.updateById(2L, mockPost));
-    }
-
-    @Test
-    public void postService_deleteById_notThrowsException() {
-        doNothing()
-            .when(postDao)
-            .deleteById(anyLong());
+        when(tagService.getAllByPostIn(expectedPosts))
+            .thenReturn(List.of(mockTag));
         
-        assertDoesNotThrow(() -> postService.deleteById(anyLong()));
+        when(commentService.getAllByPostIn(expectedPosts))
+            .thenReturn(List.of(mockComment));
+
+        var posts = postService.getAllByTitleAndTags(search, pageNumber, pageSize);
+
+        assertFalse(posts.getContent().isEmpty());
+        assertTrue(posts.getContent().size() == 1);
+        assertEquals(mockPost.getId(), posts.getContent().getFirst().getId());
     }
-
-    @Test
-    public void postService_like_returnLikedPost() {
-        Long mockLikesCount = 0L;
-        Post mockPost = this.mockPost.toBuilder()
-            .id(mockPostId)
-            .build();
-
-        when(postDao.findById(1L))
-            .thenReturn(Optional.of(mockPost));
-        
-        doNothing()
-            .when(postDao)
-            .updateLikesCount(anyLong(), anyLong());
-        
-        Post post = postService.like(mockPostId);
-
-        assertEquals(mockLikesCount + 1, post.getLikesCount().longValue());
-    }
-
-    @Test
-    public void postService_uploadPostImage_returnFileName() {
-        MultipartFile mockFile = mock(MultipartFile.class);
-        Post mockPost = this.mockPost.toBuilder()
-            .id(mockPostId)
-            .build();
-        String mockFileName = "testFileName";
-
-        when(postDao.findById(1L))
-            .thenReturn(Optional.of(mockPost));
-
-        when(fileService.upload(mockFile))
-            .thenReturn(mockFileName);
-
-        doNothing()
-            .when(postDao)
-            .updateFileName(anyLong(), anyString());
-
-        assertEquals(mockFileName, postService.uploadPostImage(mockPostId, mockFile));
-        assertThrows(ApiServiceException.class, () -> postService.uploadPostImage(2L, mockFile));
-    }
-
-    @Test
-    public void postService_downloadPostImage_returnBytesOfFile() throws IOException {
-        Resource mockResource = mock(Resource.class);
-        String mockFileName = "testFileName";
-        byte[] mockBytes = new byte[0];
-
-        when(postDao.findFileNameById(mockPostId))
-            .thenReturn(Optional.of(mockFileName));
-
-        when(mockResource.getContentAsByteArray())
-            .thenReturn(mockBytes);
-
-        when(fileService.download(mockFileName))
-            .thenReturn(mockResource);
-
-        assertEquals(mockBytes, postService.downloadPostImage(mockPostId));
-    }
-}
+}   

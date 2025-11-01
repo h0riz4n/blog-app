@@ -1,8 +1,11 @@
 package ru.yandex.blog_app.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,91 +17,121 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import ru.yandex.blog_app.dao.CommentDao;
 import ru.yandex.blog_app.exception.ApiServiceException;
-import ru.yandex.blog_app.model.domain.Comment;
-import ru.yandex.blog_app.service.impl.CommentServiceImpl;
+import ru.yandex.blog_app.model.entity.CommentEntity;
+import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.repository.CommentRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class CommentServiceTest {
 
     @Mock
-    private CommentDao commentDao;
+    private CommentRepository commentRepo;
 
     @InjectMocks
-    private CommentServiceImpl commentService;
+    private CommentService commentService;
 
-    private Long mockPostId;
-    private Long mockCommentId;
-    private Comment mockComment;
+    private PostEntity mockPost;
+    private CommentEntity mockComment;
 
     @BeforeEach
-    public void setUp() {
-        this.mockPostId = 1L;
-        this.mockCommentId = 1L;
-        this.mockComment = Comment.builder()
-            .id(mockCommentId)
-            .text("text")
-            .postId(mockPostId)
+    void setUp() {
+        this.mockPost = PostEntity.builder()
+            .id(1L)
+            .build();
+        this.mockComment = CommentEntity.builder()
+            .id(1L)
+            .post(mockPost)
+            .text("comment")
             .build();
     }
 
     @Test
-    public void getAllByPostId() {
-        when(commentDao.findAllByPostId(mockPostId))
-            .thenReturn(List.of(mockComment));
+    public void testGetAllByPostIn() {
+        var expectedComments = List.of(mockComment);
 
-        List<Comment> comments = commentService.getAllByPostId(mockPostId);
-        assertFalse(comments.isEmpty());
+        when(commentRepo.findAllByPostIn(List.of(mockPost)))
+            .thenReturn(expectedComments);
+
+        var actualComments = commentService.getAllByPostIn(List.of(mockPost));
+
+        assertEquals(expectedComments, actualComments);
     }
 
     @Test
-    public void getByIdAndPostId() {
-        when(commentDao.findByIdAndPostId(mockCommentId, mockPostId))
+    public void testGetAllByPostId() {
+        var expectedComments = List.of(mockComment);
+
+        when(commentRepo.findAllByPostId(mockPost.getId()))
+            .thenReturn(expectedComments);
+
+        var actualComments = commentService.getAllByPostId(mockPost.getId());
+
+        assertEquals(expectedComments, actualComments);
+    }
+
+    @Test
+    public void testGetByIdAndPostId() {
+        when(commentRepo.findByIdAndPostId(mockComment.getId(), mockPost.getId()))
             .thenReturn(Optional.of(mockComment));
 
-        assertEquals(mockComment, commentService.getByIdAndPostId(mockCommentId, mockPostId));
-        assertThrows(ApiServiceException.class, () -> commentService.getByIdAndPostId(2L, 2L));
+        var actualComment = commentService.getByIdAndPostId(mockComment.getId(), mockPost.getId());
+        assertEquals(mockComment, actualComment);
     }
 
     @Test
-    public void addComment() {
-        when(commentDao.save(mockComment))
-            .thenReturn(mockComment);
-        
-        Comment comment = commentService.addComment(mockPostId, mockComment);
-        assertEquals(mockCommentId, comment.getId());
-        assertThrows(ApiServiceException.class, () -> commentService.addComment(2L, mockComment));
-    }
+    public void testGetByIdAndPostIdThrowsApiServiceException() {
+        when(commentRepo.findByIdAndPostId(mockComment.getId(), mockPost.getId()))
+            .thenReturn(Optional.empty());
 
-    @Test
-    public void updateComment() {
-        when(commentDao.findByIdAndPostId(mockCommentId, mockPostId))
-            .thenReturn(Optional.of(mockComment));
 
-        doNothing()
-            .when(commentDao)
-            .updateText(anyLong(), anyString());
-        
-        Comment comment = commentService.updateComment(mockPostId, mockCommentId, mockComment.toBuilder().text("new text").build());
-        
-        assertEquals("new text", comment.getText());
         assertThrows(ApiServiceException.class, () -> {
-            Comment newComment = Comment.builder()
-                .id(2L)
-                .postId(2L)
-                .text("new text")
-                .build();
-            commentService.updateComment(mockPostId, mockCommentId, newComment);
+            commentService.getByIdAndPostId(mockComment.getId(), mockPost.getId());
         });
     }
 
     @Test
-    public void deleteByIdAndPostId() {
-        doNothing()
-            .when(commentDao)
-            .deleteByIdAndPostId(anyLong(), anyLong());
-        
-        assertDoesNotThrow(() -> commentService.deleteByIdAndPostId(mockCommentId, mockPostId));
+    public void create() {
+        var newComment = CommentEntity.builder()
+            .text("comment")
+            .build();
+
+        when(commentRepo.save(newComment))
+            .thenReturn(newComment.toBuilder().post(mockPost).id(2L).build());
+
+        var actualComment = commentService.create(mockPost, newComment);
+
+        assertEquals(mockPost, actualComment.getPost());
+        assertEquals(2L, actualComment.getId());
+    }
+
+    @Test
+    public void testUpdate() {
+        var newComment = mockComment.toBuilder()
+            .text("new comment")
+            .build();
+
+        var expectedComment = mockComment.toBuilder()
+            .text("new comment")
+            .build();
+
+        when(commentRepo.findById(1L))
+            .thenReturn(Optional.of(mockComment));
+
+        when(commentRepo.save(expectedComment))
+            .thenReturn(expectedComment);
+
+        var actualComment = commentService.update(mockPost, 1L, newComment);
+
+        assertEquals(expectedComment, actualComment);
+    }
+
+    @Test
+    public void testDeleteById() {
+        doNothing().when(commentRepo).deleteById(anyLong());
+
+        assertDoesNotThrow(() -> {
+            commentService.deleteById(1L);
+        });
     }
 }

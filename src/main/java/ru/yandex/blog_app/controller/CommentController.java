@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,9 @@ import ru.yandex.blog_app.service.CommentService;
 import ru.yandex.blog_app.service.PostService;
 
 @RestController
+@Validated
 @RequiredArgsConstructor
+@Tag(name = "Контроллер по работе с комментариями")
 @RequestMapping("/api/posts/{postId}/comments")
 public class CommentController {
 
@@ -35,6 +39,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping
+    @Operation(summary = "Получение комментариев поста по идентификатору")
     public ResponseEntity<List<CommentDto>> getAllByPostId(
         @PathVariable("postId") @NotNull @Positive Long postId
     ) {
@@ -42,6 +47,7 @@ public class CommentController {
     }
 
     @GetMapping("/{commentId}")
+    @Operation(summary = "Получение комментария по идентификатору")
     public ResponseEntity<CommentDto> getByIdAndPostId(
         @PathVariable("postId") @NotNull @Positive Long postId,
         @PathVariable("commentId") @NotNull @Positive Long commentId
@@ -51,29 +57,31 @@ public class CommentController {
 
     @PostMapping
     @JsonView(CommentView.Details.class)
+    @Operation(summary = "Создание комментария")
     public ResponseEntity<CommentDto> addComment(
         @PathVariable("postId") @NotNull @Positive Long postId,
         @RequestBody @Validated(CommentView.Create.class) @JsonView(CommentView.Create.class) CommentDto commentDto
     ) {
-        postService.getById(postId); // verify post
-        return ResponseEntity.ok(commentMapper.toDto(commentService.addComment(postId, commentMapper.toEntity(commentDto))));
+        return ResponseEntity.ok(commentMapper.toDto(commentService.create(postService.getById(postId), commentMapper.toEntity(commentDto))));
     }
 
     @PutMapping("/{commentId}")
+    @Operation(summary = "Обновление комментария")
     public ResponseEntity<CommentDto> update(
         @PathVariable("postId") @NotNull @Positive Long postId,
         @PathVariable("commentId") @NotNull @Positive Long commentId,
-        @RequestBody @Validated(CommentView.Update.class) @JsonView(CommentView.Update.class) CommentDto commentDto
+        @RequestBody @Validated(CommentView.Modify.class) @JsonView(CommentView.Modify.class) CommentDto commentDto
     ) {
-        return ResponseEntity.ok(commentMapper.toDto(commentService.updateComment(postId, commentId, commentMapper.toEntity(commentDto))));
+        return ResponseEntity.ok(commentMapper.toDto(commentService.update(postService.getById(postId), commentId, commentMapper.toEntity(commentDto))));
     }
 
     @DeleteMapping("/{commentId}")
+    @Operation(summary = "Удаление комментария")
     public ResponseEntity<Void> delete(
         @PathVariable("postId") @NotNull @Positive Long postId,
         @PathVariable("commentId") @NotNull @Positive Long commentId 
     ) {
-        commentService.deleteByIdAndPostId(commentId, postId);
+        commentService.deleteById(commentId);;
         return ResponseEntity.ok().build();
     }
 }

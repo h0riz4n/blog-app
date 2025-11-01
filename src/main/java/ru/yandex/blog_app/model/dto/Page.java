@@ -14,12 +14,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Page<T> {
-    
+
     private List<T> posts;
 
     private Boolean hasPrev;
 
     private Boolean hasNext;
 
-    private Long lastPage;
+    private Integer lastPage;
 }

@@ -1,0 +1,64 @@
+server:
+    port: 8080
+    servlet:
+        context-path: ${CONTEXT_PATH:}
+
+spring:
+    application:
+        name: '@name@'
+
+    servlet:
+        multipart:
+            max-file-size: 5MB
+            max-request-size: 10MB
+    
+    mvc:
+        problemdetails:
+            enabled: true
+
+    jackson:
+        mapper:
+            DEFAULT_VIEW_INCLUSION: true
+
+    output:
+        ansi:
+            enabled: ALWAYS
+
+    datasource:
+        url: ${DB_URL}
+        username: ${DB_USER}
+        password: ${DB_PASSWORD}
+        hikari:
+            maximum-pool-size: 11
+            minimum-idle: 4
+
+    jpa:
+        open-in-view: false
+        show-sql: true
+        hibernate:
+            ddl-auto: validate
+        properties:
+            hibernate:
+                order_inserts: true
+                default_schema: blog_app
+                format_sql: true
+                jdbc:
+                    batch_size: 100
+
+    liquibase:
+        enabled: true
+        change-log: classpath:/db/changelog/db.changelog-master.yml
+        default-schema: blog_app
+
+blog-app:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+    cors-origins: ${CORS_ORIGINS:*}
+
+app:
+    info:
+        title: '@name@'
+        version: '@version@'
+        description: '@description@'
+    server:
+        url: ${HOST_URL:http://localhost:8080}${server.servlet.context-path}
+        description: Сервер

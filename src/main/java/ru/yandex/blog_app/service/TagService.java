@@ -1,13 +1,21 @@
 package ru.yandex.blog_app.service;
 
 import java.util.List;
-import java.util.Map;
 
-import ru.yandex.blog_app.model.domain.Tag;
+import org.springframework.stereotype.Service;
 
-public interface TagService {
+import lombok.RequiredArgsConstructor;
+import ru.yandex.blog_app.model.entity.PostEntity;
+import ru.yandex.blog_app.model.entity.TagEntity;
+import ru.yandex.blog_app.repository.TagRepository;
 
-    List<Tag> create(List<Tag> tags);
+@Service
+@RequiredArgsConstructor
+public class TagService {
 
-    Map<Long, List<Tag>> getAllByPostIds(List<Long> postIds);
+    private final TagRepository tagRepo;
+
+    public List<TagEntity> getAllByPostIn(List<PostEntity> posts) {
+        return tagRepo.findAllByPostIn(posts);
+    }
 }
